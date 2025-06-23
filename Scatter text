@@ -1,0 +1,69 @@
+"use client"
+
+import { animate, hover } from "motion"
+import { splitText } from "motion-plus"
+import { useEffect, useRef } from "react"
+
+export default function ScatterText() {
+    const containerRef = useRef(null)
+    const velocityX = useRef(0)
+    const velocityY = useRef(0)
+    const prevEvent = useRef(0)
+
+    useEffect(() => {
+        if (!containerRef.current) return
+
+        const { chars } = splitText(containerRef.current.querySelector(".h1"))
+
+        const handlePointerMove = (event) => {
+            const now = performance.now()
+            const timeSinceLastEvent = (now - prevEvent.current) / 1000
+            prevEvent.current = now
+            velocityX.current = event.movementX / timeSinceLastEvent
+            velocityY.current = event.movementY / timeSinceLastEvent
+        }
+
+        document.addEventListener("pointermove", handlePointerMove)
+
+        hover(chars, (element) => {
+            const speed = Math.sqrt(
+                velocityX.current ** 2 + velocityY.current ** 2
+            )
+            const angle = Math.atan2(velocityY.current, velocityX.current)
+            const distance = speed * 0.1
+
+            animate(
+                element,
+                {
+                    x: Math.cos(angle) * distance,
+                    y: Math.sin(angle) * distance,
+                },
+                { type: "spring", stiffness: 100, damping: 50 }
+            )
+        })
+
+        return () => {
+            document.removeEventListener("pointermove", handlePointerMove)
+        }
+    }, [])
+
+    return (
+        <div className="container" ref={containerRef}>
+            <h1 className="h1">Move your pointer over the text to scatter.</h1>
+            <style>{`
+                .container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    width: 100%;
+                    max-width: 420px;
+                    text-align: left;
+                    color: #0f1115;
+                }
+                .split-char {
+                    will-change: transform, opacity;
+                }
+            `}</style>
+        </div>
+    )
+}
