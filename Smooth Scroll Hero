@@ -1,0 +1,492 @@
+import { useState, useRef } from 'react';
+import {
+  motion,
+  useMotionTemplate,
+  useScroll,
+  useTransform,
+  useSpring,
+} from 'framer-motion';
+import { SiSpacex, FiArrowRight, FiMapPin, FiSun, FiMoon } from 'react-icons/fi';
+
+// Main Component
+const Home = () => {
+  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [selectedLaunch, setSelectedLaunch] = useState(null);
+
+  return (
+    <div
+      style={{
+        background: isDarkTheme
+          ? 'linear-gradient(135deg, #1a1a3a 0%, #2e2e5e 100%)'
+          : 'linear-gradient(135deg, #e0e5ff 0%, #b0b5ff 100%)',
+        minHeight: '100vh',
+        fontFamily: '"Orbitron", sans-serif',
+        position: 'relative',
+        overflow: 'hidden',
+        scrollBehavior: 'smooth',
+      }}
+    >
+      <Nav isDarkTheme={isDarkTheme} setIsDarkTheme={setIsDarkTheme} />
+      <Hero isDarkTheme={isDarkTheme} />
+      <Schedule isDarkTheme={isDarkTheme} setSelectedLaunch={setSelectedLaunch} />
+      {selectedLaunch && (
+        <LaunchModal
+          launch={selectedLaunch}
+          onClose={() => setSelectedLaunch(null)}
+          isDarkTheme={isDarkTheme}
+        />
+      )}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `radial-gradient(circle at center, ${
+            isDarkTheme ? 'rgba(0, 255, 255, 0.1)' : 'rgba(0, 100, 255, 0.1)'
+          } 0%, transparent 70%)`,
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+    </div>
+  );
+};
+
+// Nav
+const Nav = ({ isDarkTheme, setIsDarkTheme }) => {
+  const { scrollY } = useScroll();
+  const opacity = useTransform(scrollY, [0, 200], [1, 0.7]);
+
+  return (
+    <motion.nav
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '16px 24px',
+        background: isDarkTheme
+          ? 'rgba(20, 20, 50, 0.8)'
+          : 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: `1px solid ${isDarkTheme ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'}`,
+        color: isDarkTheme ? '#ffffff' : '#1a1a3a',
+        opacity,
+      }}
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <SiSpacex style={{ fontSize: '2rem', mixBlendMode: isDarkTheme ? 'difference' : 'normal' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <button
+          onClick={() => {
+            document.getElementById('launch-schedule')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '0.875rem',
+            color: isDarkTheme ? '#a0a0cc' : '#4a4a8a',
+          }}
+        >
+          LAUNCH SCHEDULE <FiArrowRight />
+        </button>
+        <motion.button
+          whileHover={{ scale: 1.2, rotate: 360 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setIsDarkTheme(!isDarkTheme)}
+          style={{ fontSize: '1.5rem', cursor: 'pointer' }}
+        >
+          {isDarkTheme ? <FiSun /> : <FiMoon />}
+        </motion.button>
+      </div>
+    </motion.nav>
+  );
+};
+
+// Hero Section
+const SECTION_HEIGHT = 1500;
+
+const Hero = ({ isDarkTheme }) => {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const rotateX = useSpring(useTransform(mouseY, [-10, 10], [10, -10]), { stiffness: 100, damping: 20 });
+  const rotateY = useSpring(useTransform(mouseX, [-10, 10], [-10, 10]), { stiffness: 100, damping: 20 });
+
+  const handleMouseMove = (event) => {
+    const { clientX, clientY } = event;
+    const { left, top, width, height } = event.currentTarget.getBoundingClientRect();
+    mouseX.set((clientX - left - width / 2) / 50);
+    mouseY.set((clientY - top - height / 2) / 50);
+  };
+
+  return (
+    <div
+      style={{ height: `calc(${SECTION_HEIGHT}px + 100vh)` }}
+      onMouseMove={handleMouseMove}
+    >
+      <CenterImage isDarkTheme={isDarkTheme} />
+      <ParallaxImages isDarkTheme={isDarkTheme} rotateX={rotateX} rotateY={rotateY} />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '384px',
+          background: `linear-gradient(to bottom, transparent, ${isDarkTheme ? '#1a1a3a' : '#e0e5ff'})`,
+        }}
+      />
+      <motion.h1
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        style={{
+          position: 'absolute',
+          top: '20%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          fontSize: '4rem',
+          fontWeight: '800',
+          color: isDarkTheme ? '#ffffff' : '#1a1a3a',
+          textShadow: isDarkTheme
+            ? '0 0 10px rgba(0, 255, 255, 0.5)'
+            : '0 0 5px rgba(0, 0, 0, 0.2)',
+        }}
+      >
+        Cosmic Ventures
+      </motion.h1>
+    </div>
+  );
+};
+
+// Center Background with ClipPath + Transform
+const CenterImage = ({ isDarkTheme }) => {
+  const { scrollY } = useScroll();
+  const clip1 = useTransform(scrollY, [0, 1500], [25, 0]);
+  const clip2 = useTransform(scrollY, [0, 1500], [75, 100]);
+  const clipPath = useMotionTemplate`polygon(${clip1}% ${clip1}%, ${clip2}% ${clip1}%, ${clip2}% ${clip2}%, ${clip1}% ${clip2}%)`;
+  const backgroundSize = useTransform(scrollY, [0, SECTION_HEIGHT + 500], ['170%', '100%']);
+  const opacity = useTransform(scrollY, [SECTION_HEIGHT, SECTION_HEIGHT + 500], [1, 0]);
+
+  return (
+    <motion.div
+      style={{
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+        width: '100%',
+        clipPath,
+        backgroundSize,
+        opacity,
+        backgroundImage: `url(https://images.unsplash.com/photo-1460186136353-977e9d6085a1?q=80&w=2670&auto=format&fit=crop)`,
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        boxShadow: isDarkTheme
+          ? '0 0 20px rgba(0, 255, 255, 0.3)'
+          : '0 0 20px rgba(0, 0, 0, 0.2)',
+      }}
+    />
+  );
+};
+
+// Parallax Images
+const ParallaxImages = ({ isDarkTheme, rotateX, rotateY }) => {
+  return (
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '200px 16px 0' }}>
+      <ParallaxImg
+        src="https://images.unsplash.com/photo-1484600899469-230e8d1d59c0?q=80&w=2670&auto=format&fit=crop"
+        alt="Launch 1"
+        start={-200}
+        end={200}
+        className={{ width: '33.33%' }}
+        isDarkTheme={isDarkTheme}
+        rotateX={rotateX}
+        rotateY={rotateY}
+      />
+      <ParallaxImg
+        src="https://images.unsplash.com/photo-1446776709462-d6b525c57bd3?q=80&w=2670&auto=format&fit=crop"
+        alt="Launch 2"
+        start={200}
+        end={-250}
+        className={{ width: '66.67%', margin: '0 auto' }}
+        isDarkTheme={isDarkTheme}
+        rotateX={rotateX}
+        rotateY={rotateY}
+      />
+      <ParallaxImg
+        src="https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=2370&auto=format&fit=crop"
+        alt="Satellite 1"
+        start={-200}
+        end={200}
+        className={{ width: '33.33%', marginLeft: 'auto' }}
+        isDarkTheme={isDarkTheme}
+        rotateX={rotateX}
+        rotateY={rotateY}
+      />
+      <ParallaxImg
+        src="https://images.unsplash.com/photo-1494022299300-899b96e49893?q=80&w=2670&auto=format&fit=crop"
+        alt="Satellite 2"
+        start={0}
+        end={-500}
+        className={{ width: '41.67%', marginLeft: '96px' }}
+        isDarkTheme={isDarkTheme}
+        rotateX={rotateX}
+        rotateY={rotateY}
+      />
+    </div>
+  );
+};
+
+const ParallaxImg = ({ src, alt, start, end, className, isDarkTheme, rotateX, rotateY }) => {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({ target: ref });
+  const opacity = useTransform(scrollYProgress, [0.75, 1], [1, 0]);
+  const scale = useTransform(scrollYProgress, [0.75, 1], [1, 0.85]);
+  const y = useTransform(scrollYProgress, [0, 1], [start, end]);
+  const transform = useMotionTemplate`translateY(${y}px) scale(${scale}) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+  return (
+    <motion.img
+      src={src}
+      alt={alt}
+      ref={ref}
+      style={{
+        ...className,
+        transform,
+        opacity,
+        borderRadius: '16px',
+        boxShadow: isDarkTheme
+          ? '0 0 15px rgba(0, 255, 255, 0.4)'
+          : '0 0 15px rgba(0, 0, 0, 0.3)',
+        border: `1px solid ${isDarkTheme ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'}`,
+      }}
+    />
+  );
+};
+
+// Schedule Section
+const Schedule = ({ isDarkTheme, setSelectedLaunch }) => {
+  const launches = [
+    { title: 'NG-21', date: 'Dec 9th', location: 'Florida', description: 'Resupply mission to the ISS.' },
+    { title: 'Starlink', date: 'Dec 20th', location: 'Texas', description: 'Deployment of Starlink satellites.' },
+    { title: 'Starlink', date: 'Jan 13th', location: 'Florida', description: 'Additional Starlink satellite deployment.' },
+    { title: 'Turksat 6A', date: 'Feb 22nd', location: 'Florida', description: 'Communications satellite for Turkey.' },
+    { title: 'NROL-186', date: 'Mar 1st', location: 'California', description: 'Classified payload for NRO.' },
+    { title: 'GOES-U', date: 'Mar 8th', location: 'California', description: 'Weather satellite for NOAA.' },
+    { title: 'ASTRA 1P', date: 'Apr 8th', location: 'Texas', description: 'Broadcast satellite for SES.' },
+  ];
+
+  return (
+    <section
+      id="launch-schedule"
+      style={{
+        maxWidth: '1280px',
+        margin: '0 auto',
+        padding: '192px 16px',
+        color: isDarkTheme ? '#ffffff' : '#1a1a3a',
+      }}
+    >
+      <motion.h1
+        initial={{ y: 48, opacity: 0 }}
+        whileInView={{ y: 0, opacity: 1 }}
+        transition={{ ease: 'easeInOut', duration: 0.75 }}
+        style={{
+          fontSize: '2.5rem',
+          fontWeight: '800',
+          textTransform: 'uppercase',
+          marginBottom: '80px',
+          textShadow: isDarkTheme ? '0 0 10px rgba(0, 255, 255, 0.5)' : 'none',
+        }}
+      >
+        Launch Schedule
+      </motion.h1>
+      {launches.map((launch) => (
+        <ScheduleItem
+          key={launch.title + launch.date}
+          title={launch.title}
+          date={launch.date}
+          location={launch.location}
+          description={launch.description}
+          onClick={() => setSelectedLaunch(launch)}
+          isDarkTheme={isDarkTheme}
+        />
+      ))}
+    </section>
+  );
+};
+
+const ScheduleItem = ({ title, date, location, description, onClick, isDarkTheme }) => {
+  const ref = useRef(null);
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ y: 48, opacity: 0 }}
+      whileInView={{ y: 0, opacity: 1 }}
+      transition={{ ease: 'easeInOut', duration: 0.75 }}
+      whileHover={{ rotateY: 180 }}
+      onClick={() => {
+        setIsFlipped(!isFlipped);
+        setTimeout(() => setIsFlipped(false), 1000); // Reset flip after 1s
+        onClick();
+      }}
+      style={{
+        marginBottom: '36px',
+        padding: '12px',
+        background: isDarkTheme
+          ? 'rgba(255, 255, 255, 0.1)'
+          : 'rgba(0, 0, 0, 0.05)',
+        borderRadius: '12px',
+        border: `1px solid ${isDarkTheme ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'}`,
+        boxShadow: isDarkTheme
+          ? '0 0 15px rgba(0, 255, 255, 0.3)'
+          : '0 0 15px rgba(0, 0, 0, 0.2)',
+        cursor: 'pointer',
+        perspective: '1000px',
+        transformStyle: 'preserve-3d',
+      }}
+    >
+      <motion.div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px',
+          backfaceVisibility: 'hidden',
+        }}
+        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div>
+          <p style={{ fontSize: '1.25rem', color: isDarkTheme ? '#ffffff' : '#1a1a3a', marginBottom: '6px' }}>
+            {title}
+          </p>
+          <p style={{ fontSize: '0.875rem', textTransform: 'uppercase', color: isDarkTheme ? '#a0a0cc' : '#4a4a8a' }}>
+            {date}
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.875rem', textTransform: 'uppercase', color: isDarkTheme ? '#a0a0cc' : '#4a4a8a' }}>
+          <p>{location}</p>
+          <FiMapPin />
+        </div>
+      </motion.div>
+      <motion.div
+        style={{
+          position: 'absolute',
+          top: '0',
+          left: '0',
+          right: '0',
+          bottom: '0',
+          padding: '12px',
+          background: isDarkTheme ? 'rgba(0, 255, 255, 0.2)' : 'rgba(0, 0, 255, 0.2)',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: isDarkTheme ? '#ffffff' : '#1a1a3a',
+          backfaceVisibility: 'hidden',
+        }}
+        animate={{ rotateY: isFlipped ? 0 : -180 }}
+        transition={{ duration: 0.5 }}
+      >
+        <p>{description}</p>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// Launch Modal
+const LaunchModal = ({ launch, onClose, isDarkTheme }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8, rotateX: 20 }}
+      animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+      exit={{ opacity: 0, scale: 0.8, rotateX: -20 }}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: isDarkTheme
+          ? 'rgba(20, 20, 50, 0.9)'
+          : 'rgba(255, 255, 255, 0.9)',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+      }}
+    >
+      <motion.div
+        style={{
+          maxWidth: '600px',
+          width: '90%',
+          padding: '32px',
+          background: isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+          borderRadius: '16px',
+          border: `1px solid ${isDarkTheme ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)'}`,
+          boxShadow: isDarkTheme
+            ? '0 0 20px rgba(0, 255, 255, 0.4)'
+            : '0 0 20px rgba(0, 0, 0, 0.3)',
+        }}
+      >
+        <motion.h2
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          style={{
+            fontSize: '2rem',
+            fontWeight: '700',
+            color: isDarkTheme ? '#ffffff' : '#1a1a3a',
+            marginBottom: '16px',
+          }}
+        >
+          {launch.title}
+        </motion.h2>
+        <p style={{ fontSize: '1rem', color: isDarkTheme ? '#d1d1f5' : '#4a4a8a', marginBottom: '16px' }}>
+          Date: {launch.date}
+        </p>
+        <p style={{ fontSize: '1rem', color: isDarkTheme ? '#d1d1f5' : '#4a4a8a', marginBottom: '16px' }}>
+          Location: {launch.location}
+        </p>
+        <p style={{ fontSize: '1rem', color: isDarkTheme ? '#d1d1f5' : '#4a4a8a', marginBottom: '24px' }}>
+          {launch.description}
+        </p>
+        <motion.button
+          whileHover={{
+            scale: 1.1,
+            boxShadow: isDarkTheme ? '0 0 15px rgba(0, 255, 255, 0.5)' : '0 0 15px rgba(0, 0, 0, 0.3)',
+          }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onClose}
+          style={{
+            padding: '12px 24px',
+            fontSize: '1rem',
+            color: '#ffffff',
+            background: isDarkTheme
+              ? 'linear-gradient(45deg, #00ddeb, #ff00ff)'
+              : 'linear-gradient(45deg, #0066ff, #00ccff)',
+            borderRadius: '50px',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Close
+        </motion.button>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+export default Home;
